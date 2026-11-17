@@ -1,0 +1,386 @@
+exp-1 create private and public key
+
+1.environment setup
+sudo apt-get update && sudo apt-get install openssl -y
+2.workspace creation
+mkdir blockchain_crypto && cd blockchain_crypto
+3.rsa private key
+openssl genpkey -algorithm RSA -out private_key.pem -aes256
+then enter password example 1234
+4.inspect key-enter password
+openssl rsa -in private_key.pem -text -noout
+5.extract public key
+openssl rsa -pubout -in private_key.pem -out public_key.pem
+6.display private and public key
+cat private_key.pem
+cat public_key.pem
+ls
+
+exp-2 Create a Simple Blockchain Using Python
+
+1.setup python envi
+sudo apt update
+sudo apt install python3 python3-venv python3-dev -y
+python3 --version
+2.create script file
+nano blockchain.py
+code:
+import hashlib
+import json
+import time
+class Block:
+    def __init__(self, index, prev_hash, data, timestamp):
+        self.index = index
+        self.prev_hash = prev_hash
+        self.data = data
+        self.timestamp = timestamp
+        self.hash = self.hash_block()
+    def hash_block(self):
+        block_data = {
+            "index": self.index,
+            "prev_hash": self.prev_hash,
+            "data": self.data,
+            "timestamp": self.timestamp
+        }
+        block_string = json.dumps(block_data, sort_keys=True)
+        return hashlib.sha256(block_string.encode()).hexdigest()
+def create_genesis_block():
+    return Block(0, "0", "Genesis Block", time.time())
+def next_block(last_block, data):
+    index = last_block.index + 1
+    timestamp = time.time()
+    prev_hash = last_block.hash
+    return Block(index, prev_hash, data, timestamp)
+if __name__ == "__main__":
+    blockchain = [create_genesis_block()]
+    previous_block = blockchain[0]
+    print(f"Genesis Block Hash: {previous_block.hash}\n")
+    for i in range(1, 6):
+        block_data = f"Block {i} Data"
+        new_block = next_block(previous_block, block_data)
+        blockchain.append(new_block)
+        previous_block = new_block
+        print(f"Block #{new_block.index} Hash: {new_block.hash}")
+        print(f"Previous Hash: {new_block.prev_hash}\n")
+
+Save using Ctrl + O → Enter → Ctrl + X.
+3.run
+python3 blockchain.py
+
+exp-3 smart contract on local blockchain
+
+open remix ide -click file explorer in left,find the contracts folder.
+1. right-click the folder.
+2. Select New File.
+3. Name it:
+SimpleStorage.sol
+code:
+pragma solidity ^0.8.20;
+contract SimpleStorage {
+    uint256 private storedData;
+    function set(uint256 x) public {
+        storedData = x;
+    }
+    function get() public view returns (uint256) {
+        return storedData;
+    }
+}
+in left side click compile,----,compiler version ^0.8.20
+click Compile SimpleStorage.sol.
+1. Open Deploy & Run Transactions from the left sidebar.
+2. Find the Environment dropdown.
+3. Select: Remix VM (Cancun)
+-below that in deploy make sure simplestorage is visible
+then press deploy
+Under Deployed Contracts:
+1. Expand SimpleStorage.
+2. Find the set function.
+3. Enter the number:42
+-then press transact
+-below that there is a get press call in right side of that
+-then open terminal
+sudo apt install -y nodejs npm
+sudo npm install -g ganache
+ganache
+Open Remix IDE.
+Go to Deploy & Run Transactions.
+Select External HTTP Provider.
+make sure link is http://127.0.0.1:8545
+press okay
+Click Deploy.
+Enter 42 in set.
+Click set.
+Click get.
+Verify that the returned value is 42.
+
+exp-4 smart contract Ethereum test networks.
+
+open metamask extension login to your account
+click all default network then click sepolia
+make sure sepolia is selected
+Step 1: Get free Sepolia ETH
+Open Google Cloud Sepolia Faucet
+Sign in with your Google account.
+Select Ethereum Sepolia.
+Paste your MetaMask address:
+Click Get 0.05 Sepolia ETH.
+Step 2: Create the Smart Contract in Remix
+1. Open Remix IDE.
+2. Go to File Explorer on the left.
+3. Open the contracts folder.
+4. Click New File.
+5. Name it:
+SimpleStorage.sol
+code:
+pragma solidity ^0.8.0;
+contract SimpleStorage {
+    uint256 public storedValue;
+    function store(uint256 _value) public {
+        storedValue = _value;
+    }
+    function retrieve() public view returns (uint256) {
+        return storedValue;
+    }
+}
+Click Solidity Compiler on the left sidebar.
+Select compiler version 0.8.20
+Click Compile SimpleStorage.sol.
+Step 3: Connect Remix to MetaMask
+1. In Remix, open Deploy & Run Transactions.
+2. Open the Environment dropdown.
+3. Select browser – MetaMask.
+4. MetaMask will open a connection popup.
+5. Select your account and click Connect.
+Click Deploy.
+MetaMask popup will appear.
+Check the network is Sepolia.
+Click Confirm to approve the transaction.
+ Expand SimpleStorage under Deployed Contracts.
+ Find the store button.
+ Enter 123 in the input box. click transcat
+ MetaMask popup appears.
+ Click Confirm to approve the transaction.
+ press call in right of Retrieve
+ Check the returned output.
+
+exp-5 Cryptocurrency for Multiple Users using Python
+python3 --version
+mkdir -p ~/vtu_blockchain_lab
+cd ~/vtu_blockchain_lab
+nano crypto_exp5.py
+code:
+import hashlib
+import json
+import time
+import uuid
+class Block:
+    def __init__(self, index, transactions, prev_hash):
+        self.index = index
+        self.timestamp = time.time()
+        self.transactions = transactions
+        self.prev_hash = prev_hash
+        self.hash = self.calculate_hash()
+
+    def calculate_hash(self):
+        block_dict = {
+            'index': self.index,
+            'timestamp': self.timestamp,
+            'transactions': self.transactions,
+            'prev_hash': self.prev_hash,
+        }
+        block_string = json.dumps(block_dict, sort_keys=True)
+        return hashlib.sha256(block_string.encode('utf-8')).hexdigest()
+class Blockchain:
+    def __init__(self):
+        self.chain = []
+        self.current_transactions = []
+        self.create_block(prev_hash='0')
+    def create_block(self, prev_hash):
+        block = Block(len(self.chain), self.current_transactions, prev_hash)
+        self.current_transactions = []
+        self.chain.append(block)
+        return block
+    def add_transaction(self, sender, recipient, amount):
+        if float(amount) <= 0:
+            raise ValueError('Transfer amount must be strictly positive.')
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': recipient,
+            'amount': float(amount),
+            'tx_id': str(uuid.uuid4())[:8],
+            'timestamp': time.time(),
+        })
+        return self.chain[-1].index + 1
+    def is_chain_valid(self):
+        for i in range(1, len(self.chain)):
+            current = self.chain[i]
+            previous = self.chain[i - 1]
+            if current.prev_hash != previous.hash:
+                print(f'[!] Broken link at Block {current.index}')
+                return False
+            if current.hash != current.calculate_hash():
+                print(f'[!] Data altered at Block {current.index}')
+                return False
+        return True
+if __name__ == '__main__':
+    bc = Blockchain()
+    print('=' * 60)
+    print('     VTU BLOCKCHAIN LAB - MULTI-USER CRYPTOCURRENCY')
+    print('               (UBUNTU LINUX PLATFORM)')
+    print('=' * 60)
+    print(f'[+] Genesis Block Initialized (Hash: {bc.chain[0].hash[:20]}...)')
+    wallets = {
+        'Alice': f"USER_ALICE_{str(uuid.uuid4())[:4]}",
+        'Bob': f"USER_BOB_{str(uuid.uuid4())[:4]}",
+        'Charlie': f"USER_CHARLIE_{str(uuid.uuid4())[:4]}",
+    }
+    print('\nRegistered Wallets on Node:')
+    for name, addr in wallets.items():
+        print(f'  • {name:7s} : {addr}')
+    while True:
+        print('\n' + '-' * 35)
+        print('  1. Add Transaction (Input)')
+        print('  2. Mine Block (Seal Pool)')
+        print('  3. Display Blockchain (Output)')
+        print('  4. Check Chain Validity')
+        print('  5. Test Tampering Attack')
+        print('  6. Exit')
+        print('-' * 35)
+        choice = input('Select option (1-6): ').strip()
+        if choice == '1':
+            print('\n[INPUT STEP: New Transaction]')
+            sender = input("Enter Sender Address/Name (e.g., Alice or custom ID): ").strip()
+            recipient = input("Enter Recipient Address/Name (e.g., Bob or custom ID): ").strip()
+            amount = input('Enter Token Amount: ').strip()
+            try:
+                bc.add_transaction(sender, recipient, amount)
+                print(f'[*] Successfully queued: {sender} -> {recipient} ({amount} coins)')
+            except Exception as e:
+                print(f'[!] Error: {e}')
+        elif choice == '2':
+            print('\n[PROCESSING STEP: Mining Block]')
+            if not bc.current_transactions:
+                print('[!] Transaction pool is empty. Please add a transaction first.')
+            else:
+                new_block = bc.create_block(prev_hash=bc.chain[-1].hash)
+                print(f'[+] Successfully Mined Block #{new_block.index}!')
+                print(f'    Block Hash: {new_block.hash}')
+                print(f'    Prev Hash : {new_block.prev_hash}')
+        elif choice == '3':
+            print('\n[OUTPUT STEP: Complete Ledger]')
+            print('=' * 60)
+            for b in bc.chain:
+                print(f'\n--- Block #{b.index} ---')
+                print(f'Timestamp : {b.timestamp}')
+                print(f'Prev Hash : {b.prev_hash}')
+                print(f'Hash      : {b.hash}')
+                print(f'Transactions: {json.dumps(b.transactions, indent=2) if b.transactions else "[]"}')
+            print('=' * 60)
+        elif choice == '4':
+            print('\n[VERIFICATION STEP]')
+            valid = bc.is_chain_valid()
+            print(f'Blockchain Status: {"[VALID - No Tampering]" if valid else "[CORRUPTED - Invalid Hash Pointer]"}')
+        elif choice == '5':
+            print('\n[TAMPERING TEST]')
+            if len(bc.chain) < 2:
+                print('[!] Mine at least one block (Option 2) before testing tampering.')
+            else:
+                bc.chain[1].transactions[0]['amount'] = 99999.0
+                print('[*] Injected malicious change in Block 1 transaction amount.')
+                print(f'Re-verifying chain validity: Valid = {bc.is_chain_valid()}')
+        elif choice == '6':
+            print('Exiting Ubuntu Blockchain Terminal.')
+            break
+        else:
+            print('[!] Invalid choice. Enter 1 to 6.')
+next
+ctrl+o enter ctrl+x
+python3 crypto_exp5.py
+select from 1 to 6 ,one by one in line
+
+exp -6 hyperledger
+
+Step 1: Check Docker
+
+docker --version
+docker compose version
+
+Step 2: Install Go
+
+cd ~
+wget https://go.dev/dl/go1.25.0.linux-amd64.tar.gz
+tar -xzf go1.25.0.linux-amd64.tar.gz
+rm go1.25.0.linux-amd64.tar.gz
+echo 'export GOROOT=$HOME/go' >> ~/.bashrc if this doesnt work
+(echo 'export GOROOT=$HOME/go1.25' >> ~/.bashrc)
+echo 'export PATH=$HOME/go/bin:$PATH' >> ~/.bashrc if this doesnt work
+(echo 'export PATH=$GOROOT/bin:$PATH' >> ~/.bashrc)
+source ~/.bashrc
+go version
+
+Step 3: Install Hyperledger Fabric
+
+cd ~
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
+chmod +x install-fabric.sh
+./install-fabric.sh docker binary samples
+
+Step 4: Start Fabric Network
+
+cd ~/fabric-samples/test-network
+./network.sh down
+./network.sh up createChannel -c mychannel -ca
+
+Step 5: Deploy Chaincode
+
+./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go
+
+Step 6: Set Environment Variables
+export PATH=$PWD/../bin:$PATH
+export FABRIC_CFG_PATH=$PWD/../config/
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=$PWD/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=$PWD/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+ORDERER_CA=$PWD/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+ORG1_CA=$PWD/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+ORG2_CA=$PWD/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+
+Step 7: Initialize Ledger
+
+peer chaincode invoke \
+-o localhost:7050 \
+--ordererTLSHostnameOverride orderer.example.com \
+--tls --cafile "$ORDERER_CA" \
+-C mychannel -n basic \
+--peerAddresses localhost:7051 --tlsRootCertFiles "$ORG1_CA" \
+--peerAddresses localhost:9051 --tlsRootCertFiles "$ORG2_CA" \
+-c '{"function":"InitLedger","Args":[]}'
+
+Step 8: View All Assets
+
+peer chaincode query \
+-C mychannel -n basic \
+-c '{"function":"GetAllAssets","Args":[]}'
+
+Step 9: Create New Asset
+
+peer chaincode invoke \
+-o localhost:7050 \
+--ordererTLSHostnameOverride orderer.example.com \
+--tls --cafile "$ORDERER_CA" \
+-C mychannel -n basic \
+--peerAddresses localhost:7051 --tlsRootCertFiles "$ORG1_CA" \
+--peerAddresses localhost:9051 --tlsRootCertFiles "$ORG2_CA" \
+-c '{"function":"CreateAsset","Args":["asset7","blue","15","Austin","300"]}'
+
+Step 10: Read Asset
+
+peer chaincode query \
+-C mychannel -n basic \
+-c '{"function":"ReadAsset","Args":["asset7"]}'
+
+Step 11: Stop Network
+
+./network.sh down
